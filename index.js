@@ -10,19 +10,16 @@ app.get("/getpasses", async (req, res) => {
     return res.status(400).json({ error: "missing userid" });
   }
   try {
-    const gameRes = await fetch(`https://games.roblox.com/v2/users/${userid}/games`);
-    const gamesData = await gameRes.json();
-    const games = gamesData.data || [];
-
     let allPasses = [];
-    for (const game of games) {
-      const universeId = game.id;
-      const passRes = await fetch(`https://games.roblox.com/v1/games/${universeId}/game-passes?sortOrder=Asc&limit=100`);
-      const passData = await passRes.json();
-      if (passData.data) {
-        allPasses.push(...passData.data);
-      }
-    }
+    let cursor = "";
+
+    do {
+      const url = `https://inventory.roblox.com/v1/users/${userid}/assets/collectibles?assetType=GamePass&limit=100${cursor ? "&cursor=" + cursor : ""}`;
+      const res2 = await fetch(url);
+      const data = await res2.json();
+      if (data.data) allPasses.push(...data.data);
+      cursor = data.nextPageCursor || "";
+    } while (cursor);
 
     res.json({
       userid,
